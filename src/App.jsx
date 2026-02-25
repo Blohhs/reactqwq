@@ -4,6 +4,9 @@ import viteLogo from "/vite.svg";
 import "./App.css";
 import MyComponents from "./MyComponents";
 import Counter from "./Counter";
+import TextImput from "./TextImput";
+import TaskManager from "./TaskManager"; 
+
 
 function App() {
 	const [count, setCount] = useState(0);
@@ -38,6 +41,10 @@ function App() {
 			<MyComponents></MyComponents>
 
 			<Counter></Counter>
+
+      <TextImput></TextImput>
+
+      <TaskManager></TaskManager>
 		</>
 	);
 }
