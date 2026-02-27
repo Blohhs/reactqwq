@@ -5,8 +5,7 @@ import "./App.css";
 import MyComponents from "./MyComponents";
 import Counter from "./Counter";
 import TextImput from "./TextImput";
-import TaskManager from "./TaskManager"; 
-
+import TaskManger from "./TaskManger";
 
 function App() {
 	const [count, setCount] = useState(0);
@@ -42,9 +41,9 @@ function App() {
 
 			<Counter></Counter>
 
-      <TextImput></TextImput>
+			<TextImput></TextImput>
 
-      <TaskManager></TaskManager>
+			<TaskManger></TaskManger>
 		</>
 	);
 }
