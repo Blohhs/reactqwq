@@ -1,11 +1,18 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 function TaskManager() {
-	const [tasks, setTasks] = useState([]);
+	const [tasks, setTasks] = useState(() => {
+		const d = JSON.parse(localStorage.getItem("tasks"));
+		return typeof d == "object" && d ? d : [];
+	});
 	const [newTaskText, setNewTaskText] = useState("");
 	const [editingId, setEditingId] = useState(null);
 	const [editText, setEditText] = useState("");
 	const [searchTerm, setSearchTerm] = useState("");
+
+	useEffect(() => {
+		localStorage.setItem("tasks", JSON.stringify(tasks));
+	}, [tasks]);
 
 	const filteredTasks = useMemo(() => {
 		if (!searchTerm.trim()) return tasks;
@@ -73,7 +80,7 @@ function TaskManager() {
 					type="text"
 					value={searchTerm}
 					onChange={(e) => setSearchTerm(e.target.value)}
-					placeholder="Поиск задач..."
+					placeholder="Поиск задач"
 				/>
 			</div>
 
