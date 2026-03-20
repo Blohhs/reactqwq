@@ -1,19 +1,36 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 function TaskManager() {
 	const [tasks, setTasks] = useState([]);
 	const [newTaskText, setNewTaskText] = useState("");
+	const [editingId, setEditingId] = useState(null);
+	const [editText, setEditText] = useState("");
+	const [searchTerm, setSearchTerm] = useState("");
+
+	const filteredTasks = useMemo(() => {
+		if (!searchTerm.trim()) return tasks;
+		return tasks.filter((task) =>
+			task.text.toLowerCase().includes(searchTerm.toLowerCase()),
+		);
+	}, [tasks, searchTerm]);
+
+	const sortedTasks = useMemo(() => {
+		return [...filteredTasks].sort((a, b) => a.text.localeCompare(b.text));
+	}, [filteredTasks]);
 
 	const addTask = (text, deadline = "") => {
+		const trimmed = text.trim();
+		if (!trimmed) return;
 		setTasks([
 			...tasks,
 			{
 				id: Math.round(Math.random() * 10000000),
-				text,
+				text: trimmed,
 				done: false,
 				deadline,
 			},
 		]);
+		setNewTaskText("");
 	};
 
 	const removeTask = (id) => {
@@ -21,28 +38,47 @@ function TaskManager() {
 	};
 
 	const editTask = (id, newText) => {
+		const trimmed = newText.trim();
+		if (!trimmed) return;
 		setTasks(
 			tasks.map((task) =>
-				task.id === id ? { ...task, text: newText } : task,
+				task.id === id ? { ...task, text: trimmed } : task,
+			),
+		);
+		setEditingId(null);
+	};
+
+	const toggleDone = (id) => {
+		setTasks(
+			tasks.map((task) =>
+				task.id === id ? { ...task, done: !task.done } : task,
 			),
 		);
 	};
 
-	const [editingId, setEditingId] = useState(null);
-	const [editText, setEditText] = useState("");
-
 	return (
 		<>
-			<input
-				type="text"
-				value={newTaskText}
-				onChange={(e) => setNewTaskText(e.target.value)}
-				placeholder="Введите задачу"
-			/>
-			<button onClick={() => addTask(newTaskText)}>добавить</button>
+			<div>
+				<input
+					type="text"
+					value={newTaskText}
+					onChange={(e) => setNewTaskText(e.target.value)}
+					placeholder="Введите задачу"
+				/>
+				<button onClick={() => addTask(newTaskText)}>добавить</button>
+			</div>
+
+			<div style={{ marginTop: "10px" }}>
+				<input
+					type="text"
+					value={searchTerm}
+					onChange={(e) => setSearchTerm(e.target.value)}
+					placeholder="Поиск задач..."
+				/>
+			</div>
 
 			<ul>
-				{tasks.map((t) => (
+				{sortedTasks.map((t) => (
 					<li key={t.id}>
 						{editingId === t.id ? (
 							<div>
@@ -71,20 +107,16 @@ function TaskManager() {
 								<input
 									type="checkbox"
 									checked={t.done}
-									readOnly
+									onChange={() => toggleDone(t.id)}
 								/>
 								{t.deadline && (
 									<div>
 										{new Date(t.deadline).toLocaleString()}
 									</div>
 								)}
-
-
 								<button onClick={() => removeTask(t.id)}>
 									удалить
 								</button>
-
-                
 								<button
 									onClick={() => {
 										setEditingId(t.id);
