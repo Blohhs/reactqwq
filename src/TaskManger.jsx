@@ -3,13 +3,15 @@ import { useState, useMemo, useEffect } from "react";
 function TaskManager() {
 	const [tasks, setTasks] = useState(() => {
 		const d = JSON.parse(localStorage.getItem("tasks"));
-		return typeof d === "object" && d ? d : [];
+		return Array.isArray(d) ? d : [];
 	});
 	const [newTaskText, setNewTaskText] = useState("");
 	const [newTaskDeadline, setNewTaskDeadline] = useState("");
+	const [newTaskType, setNewTaskType] = useState("домашняя");
 	const [editingId, setEditingId] = useState(null);
 	const [editText, setEditText] = useState("");
 	const [editDeadline, setEditDeadline] = useState("");
+	const [editType, setEditType] = useState("домашняя");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [theme, setTheme] = useState("light");
 
@@ -28,7 +30,7 @@ function TaskManager() {
 		return [...filteredTasks].sort((a, b) => a.text.localeCompare(b.text));
 	}, [filteredTasks]);
 
-	const addTask = (text, deadline = "") => {
+	const addTask = (text, deadline = "", type = "домашняя") => {
 		const trimmed = text.trim();
 		if (!trimmed) return;
 		setTasks([
@@ -38,23 +40,30 @@ function TaskManager() {
 				text: trimmed,
 				done: false,
 				deadline,
+				type,
 			},
 		]);
 		setNewTaskText("");
 		setNewTaskDeadline("");
+		setNewTaskType("домашняя");
 	};
 
 	const removeTask = (id) => {
 		setTasks(tasks.filter((t) => t.id !== id));
 	};
 
-	const editTask = (id, newText, newDeadline) => {
+	const editTask = (id, newText, newDeadline, newType) => {
 		const trimmed = newText.trim();
 		if (!trimmed) return;
 		setTasks(
 			tasks.map((task) =>
 				task.id === id
-					? { ...task, text: trimmed, deadline: newDeadline }
+					? {
+							...task,
+							text: trimmed,
+							deadline: newDeadline,
+							type: newType,
+						}
 					: task,
 			),
 		);
@@ -102,7 +111,6 @@ function TaskManager() {
 				backgroundColor: theme === "light" ? "#e2dfdf" : "#303030",
 				color: theme === "light" ? "#000000" : "#fff",
 				minHeight: "100vh",
-				minWidth: "100vh",
 				margin: 0,
 				padding: 20,
 				fontFamily: "Arial, sans-serif",
@@ -121,7 +129,7 @@ function TaskManager() {
 					style={{
 						...inputStyle,
 						marginRight: "10px",
-						width: "250px",
+						width: "220px",
 					}}
 				/>
 				<input
@@ -130,8 +138,18 @@ function TaskManager() {
 					onChange={(e) => setNewTaskDeadline(e.target.value)}
 					style={{ ...inputStyle, marginRight: "10px" }}
 				/>
+				<select
+					value={newTaskType}
+					onChange={(e) => setNewTaskType(e.target.value)}
+					style={{ ...inputStyle, marginRight: "10px" }}
+				>
+					<option value="домашняя">Домашняя</option>
+					<option value="рабочая">Рабочая</option>
+				</select>
 				<button
-					onClick={() => addTask(newTaskText, newTaskDeadline)}
+					onClick={() =>
+						addTask(newTaskText, newTaskDeadline, newTaskType)
+					}
 					style={buttonStyle}
 				>
 					добавить
@@ -166,7 +184,7 @@ function TaskManager() {
 						}}
 					>
 						{editingId === t.id ? (
-							<div style={{ flexGrow: 1 }}>
+							<div style={{ flexGrow: 1, width: "100%" }}>
 								<input
 									type="text"
 									value={editText}
@@ -209,84 +227,120 @@ function TaskManager() {
 											theme === "light" ? "#000" : "#eee",
 									}}
 								/>
-								<button
-									onClick={() =>
-										editTask(t.id, editText, editDeadline)
+								<select
+									value={editType}
+									onChange={(e) =>
+										setEditType(e.target.value)
 									}
-									style={buttonStyle}
-								>
-									Сохранить
-								</button>
-								<button
-									onClick={() => setEditingId(null)}
 									style={{
-										...buttonStyle,
+										padding: "6px",
+										width: "30%",
+										marginRight: "10px",
+										borderRadius: "4px",
+										border:
+											theme === "light"
+												? "1px solid #ccc"
+												: "1px solid #999",
 										backgroundColor:
-											theme === "light" ? "#888" : "#888",
-										marginLeft: "5px",
+											theme === "light" ? "#fff" : "#444",
+										color:
+											theme === "light" ? "#000" : "#eee",
 									}}
 								>
-									Отмена
-								</button>
+									<option value="домашняя">Домашняя</option>
+									<option value="рабочая">Рабочая</option>
+								</select>
+								<div style={{ marginTop: 10 }}>
+									<button
+										onClick={() =>
+											editTask(
+												t.id,
+												editText,
+												editDeadline,
+												editType,
+											)
+										}
+										style={buttonStyle}
+									>
+										Сохранить
+									</button>
+									<button
+										onClick={() => setEditingId(null)}
+										style={buttonStyle}
+									>
+										Отмена
+									</button>
+								</div>
 							</div>
 						) : (
 							<>
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										flexGrow: 1,
-									}}
-								>
-									<input
-										type="checkbox"
-										checked={t.done}
-										onChange={() => toggleDone(t.id)}
-										style={{ marginRight: "10px" }}
-									/>
-									<span
+								<div style={{ flexGrow: 1, minWidth: 0 }}>
+									<label
 										style={{
 											textDecoration: t.done
 												? "line-through"
 												: "none",
-											wordBreak: "break-word",
+											cursor: "pointer",
 										}}
 									>
-										{t.text}
-									</span>
-								</div>
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "10px",
-										flexWrap: "wrap",
-									}}
-								>
-									{t.deadline && (
-										<span style={{ fontSize: "12px" }}>
-											{new Date(
-												t.deadline,
-											).toLocaleString()}{" "}
-											{isOverdue(t.deadline, t.done) &&
-												" (просрочено)"}
+										<input
+											type="checkbox"
+											checked={t.done}
+											onChange={() => toggleDone(t.id)}
+											style={{ marginRight: "10px" }}
+										/>
+										{t.text}{" "}
+										{t.deadline && (
+											<span
+												style={{
+													fontWeight: "normal",
+													fontSize: "12px",
+													color: "#555",
+													marginLeft: "10px",
+												}}
+											>
+												(до{" "}
+												{new Date(
+													t.deadline,
+												).toLocaleString()}
+												)
+											</span>
+										)}
+										<span
+											style={{
+												fontStyle: "italic",
+												fontSize: "12px",
+												marginLeft: "10px",
+												padding: "2px 6px",
+												backgroundColor:
+													t.type === "домашняя"
+														? "#b2d8b2"
+														: "#add8e6",
+												borderRadius: "4px",
+												userSelect: "none",
+											}}
+										>
+											{t.type}
 										</span>
-									)}
-									<button
-										onClick={() => removeTask(t.id)}
-										style={buttonStyle}
-									>
-										удалить
-									</button>
+									</label>
+								</div>
+								<div>
 									<button
 										onClick={() => {
 											setEditingId(t.id);
 											setEditText(t.text);
 											setEditDeadline(t.deadline || "");
+											setEditType(t.type);
 										}}
 										style={buttonStyle}
 									>
-										редактировать
+										Редактировать
+									</button>
+									<button
+										onClick={() => removeTask(t.id)}
+										style={buttonStyle}
+									>
+										Удалить
 									</button>
 								</div>
 							</>
