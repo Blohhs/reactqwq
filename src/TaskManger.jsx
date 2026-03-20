@@ -6,9 +6,12 @@ function TaskManager() {
 		return typeof d == "object" && d ? d : [];
 	});
 	const [newTaskText, setNewTaskText] = useState("");
+	const [newTaskDeadline, setNewTaskDeadline] = useState("");
 	const [editingId, setEditingId] = useState(null);
 	const [editText, setEditText] = useState("");
+	const [editDeadline, setEditDeadline] = useState("");
 	const [searchTerm, setSearchTerm] = useState("");
+	const [theme, setTheme] = useState("light");
 
 	useEffect(() => {
 		localStorage.setItem("tasks", JSON.stringify(tasks));
@@ -38,18 +41,21 @@ function TaskManager() {
 			},
 		]);
 		setNewTaskText("");
+		setNewTaskDeadline("");
 	};
 
 	const removeTask = (id) => {
 		setTasks(tasks.filter((t) => t.id !== id));
 	};
 
-	const editTask = (id, newText) => {
+	const editTask = (id, newText, newDeadline) => {
 		const trimmed = newText.trim();
 		if (!trimmed) return;
 		setTasks(
 			tasks.map((task) =>
-				task.id === id ? { ...task, text: trimmed } : task,
+				task.id === id
+					? { ...task, text: trimmed, deadline: newDeadline }
+					: task,
 			),
 		);
 		setEditingId(null);
@@ -63,8 +69,31 @@ function TaskManager() {
 		);
 	};
 
+	const toggleTheme = () => {
+		setTheme(theme === "light" ? "dark" : "light");
+	};
+
+	const isOverdue = (deadline, done) => {
+		if (!deadline || done) return false;
+		return new Date(deadline) < new Date();
+	};
+
 	return (
-		<>
+		<div
+			style={{
+				backgroundColor: theme === "light" ? "#e2dfdf" : "#303030",
+				color: theme === "light" ? "#000000" : "#fff",
+				minHeight: '100vh',
+				minWidth: '100vh',
+				margin: 0,
+				padding: 0,
+		
+			}}
+		>
+			<button onClick={toggleTheme}>
+				{theme === "light" ? "Тёмная тема" : "Светлая тема"}
+			</button>
+
 			<div>
 				<input
 					type="text"
@@ -72,7 +101,14 @@ function TaskManager() {
 					onChange={(e) => setNewTaskText(e.target.value)}
 					placeholder="Введите задачу"
 				/>
-				<button onClick={() => addTask(newTaskText)}>добавить</button>
+				<input
+					type="datetime-local"
+					value={newTaskDeadline}
+					onChange={(e) => setNewTaskDeadline(e.target.value)}
+				/>
+				<button onClick={() => addTask(newTaskText, newTaskDeadline)}>
+					добавить
+				</button>
 			</div>
 
 			<div style={{ marginTop: "10px" }}>
@@ -86,7 +122,16 @@ function TaskManager() {
 
 			<ul>
 				{sortedTasks.map((t) => (
-					<li key={t.id}>
+					<li
+						key={t.id}
+						style={{
+							backgroundColor: isOverdue(t.deadline, t.done)
+								? "#835858"
+								: "transparent",
+							padding: "0px",
+							margin: "5px 0",
+						}}
+					>
 						{editingId === t.id ? (
 							<div>
 								<input
@@ -96,11 +141,17 @@ function TaskManager() {
 										setEditText(e.target.value)
 									}
 								/>
+								<input
+									type="datetime-local"
+									value={editDeadline}
+									onChange={(e) =>
+										setEditDeadline(e.target.value)
+									}
+								/>
 								<button
-									onClick={() => {
-										editTask(t.id, editText);
-										setEditingId(null);
-									}}
+									onClick={() =>
+										editTask(t.id, editText, editDeadline)
+									}
 								>
 									Сохранить
 								</button>
@@ -110,16 +161,31 @@ function TaskManager() {
 							</div>
 						) : (
 							<>
-								<span>{t.text}</span>
+								<span
+									style={{
+										textDecoration: t.done
+											? "line-through"
+											: "none",
+									}}
+								>
+									{t.text}
+								</span>
 								<input
 									type="checkbox"
 									checked={t.done}
 									onChange={() => toggleDone(t.id)}
 								/>
 								{t.deadline && (
-									<div>
+									<span
+										style={{
+											marginLeft: "10px",
+											fontSize: "12px",
+										}}
+									>
 										{new Date(t.deadline).toLocaleString()}
-									</div>
+										{isOverdue(t.deadline, t.done) &&
+											" (просрочено)"}
+									</span>
 								)}
 								<button onClick={() => removeTask(t.id)}>
 									удалить
@@ -128,6 +194,7 @@ function TaskManager() {
 									onClick={() => {
 										setEditingId(t.id);
 										setEditText(t.text);
+										setEditDeadline(t.deadline || "");
 									}}
 								>
 									редактировать
@@ -137,7 +204,7 @@ function TaskManager() {
 					</li>
 				))}
 			</ul>
-		</>
+		</div>
 	);
 }
 
